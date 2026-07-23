@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afinador de Matilde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#ffe0ef;
+    --bg2:#ffc9e3;
+    --card:#fff5fa;
+    --card-edge:#ffd3ea;
+    --hot:#ff3d97;
+    --hot-dark:#c81c74;
+    --magenta:#e0409e;
+    --lav:#efb8ea;
+    --text:#4a0f34;
+    --text-dim:#a1608c;
+    --mint:#2fd6a4;
+    --mint-dark:#159a72;
+    --coral:#ff5c73;
+    --mono:'Space Mono', monospace;
+    --display:'Baloo 2', sans-serif;
+    --sans:'Quicksand', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, #fff0f8 0%, transparent 45%),
+      radial-gradient(circle at 100% 15%, #ffd6ec 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg1), var(--bg2) 60%, #ffd0e6 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:34px 16px 60px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before, body::after{
+    content:"♥"; position:fixed; font-size:100px; color:#ffffff; opacity:.22;
+    pointer-events:none; z-index:0;
+  }
+  body::before{ top:-30px; left:-40px; transform:rotate(-12deg); }
+  body::after{ bottom:-40px; right:-30px; transform:rotate(10deg); font-size:120px; }
+
+  .brand{ text-align:center; margin-bottom:20px; position:relative; z-index:1;}
+  .brand .eyebrow{
+    font-family:var(--mono); letter-spacing:.3em; font-size:11px; color:var(--hot-dark);
+    text-transform:uppercase; background:#fff; display:inline-block; padding:4px 12px;
+    border-radius:999px; box-shadow:0 2px 0 var(--card-edge);
+  }
+  .brand h1{
+    font-family:var(--display); font-weight:800; font-size:clamp(30px,6vw,46px);
+    margin:10px 0 2px; color:var(--hot-dark);
+    text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(200,28,116,.15);
+  }
+  .brand p{ color:var(--text-dim); font-size:14px; margin:0; font-weight:500; }
+
+  .pedal{
+    width:min(560px,94vw);
+    background:linear-gradient(180deg,#fff,var(--card));
+    border:2px solid var(--card-edge);
+    border-radius:28px;
+    padding:26px 24px 30px;
+    box-shadow:0 22px 44px -18px rgba(200,28,116,.35), inset 0 1px 0 #fff;
+    position:relative; z-index:1;
+  }
+
+  .screen{
+    background:linear-gradient(180deg,#2a0a1c,#1c0713);
+    border-radius:20px;
+    padding:18px 18px 14px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 6px 20px rgba(0,0,0,.5);
+  }
+  .status-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:var(--mono); font-size:11px; color:#e6a8cb; letter-spacing:.06em;
+    margin-bottom:6px;
+  }
+  .status-row .dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--coral); margin-right:6px; box-shadow:0 0 6px var(--coral);
+    transition:background .15s, box-shadow .15s;
+  }
+  .status-row .dot.live{background:var(--mint); box-shadow:0 0 8px var(--mint);}
+
+  .gauge-wrap{ position:relative; height:150px; margin:6px auto 4px; max-width:440px;}
+  svg#gauge{ width:100%; height:100%; overflow:visible; }
+  .needle{ transform-origin:220px 150px; transition:transform .04s linear; }
+  .tick{ stroke:#5a2440; stroke-width:2; }
+  .tick.center{ stroke:var(--mint); stroke-width:3; }
+  .tick.strong{ stroke:#8a3a63; }
+
+  .target-tag{
+    text-align:center; font-family:var(--mono); font-size:11px; color:#e6a8cb; letter-spacing:.05em; margin-top:2px;
+  }
+  .target-tag b{ color:#ffd7ec; }
+
+  .readout{ display:flex; align-items:baseline; justify-content:center; gap:14px; margin-top:2px; }
+  .note-name{
+    font-family:var(--display); font-weight:700; font-size:64px; line-height:1;
+    color:var(--hot); text-shadow:0 0 20px rgba(255,61,151,.5);
+    min-width:110px; text-align:center;
+  }
+  .note-name.in-tune{ color:var(--mint); text-shadow:0 0 22px rgba(47,214,164,.55); }
+  .sub-readout{ font-family:var(--mono); font-size:13px; color:#e6a8cb; text-align:left; }
+  .sub-readout .cents{ font-size:16px; color:#fff; }
+  .cents.flat, .cents.sharp{ color:var(--coral); }
+  .cents.ok{ color:var(--mint); }
+
+  .mic-btn{
+    display:block; margin:16px auto 4px; padding:13px 28px;
+    font-family:var(--display); font-weight:700; letter-spacing:.02em; font-size:16px;
+    color:#fff; background:linear-gradient(180deg,var(--hot),var(--hot-dark)); border:none; border-radius:999px; cursor:pointer;
+    box-shadow:0 6px 0 #9c1259, 0 10px 18px rgba(200,28,116,.35);
+    transition:transform .06s;
+  }
+  .mic-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #9c1259; }
+  .mic-btn.on{ background:linear-gradient(180deg,var(--mint),var(--mint-dark)); box-shadow:0 6px 0 #0d7256, 0 10px 18px rgba(21,154,114,.35); }
+  .hint{ text-align:center; font-size:12px; color:var(--text-dim); margin-top:8px; min-height:16px; font-weight:600;}
+
+  .chroma-btn{
+    display:block; margin:6px auto 0; padding:8px 16px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--hot-dark); background:#fff; border:2px solid var(--card-edge); border-radius:999px;
+    cursor:pointer; transition:background .12s, border-color .12s, color .12s;
+  }
+  .chroma-btn.active{ background:var(--mint); border-color:var(--mint-dark); color:#fff; }
+
+  .mode-toggle{
+    display:flex; gap:8px; margin-top:22px; background:#ffe6f2; padding:5px;
+    border-radius:14px; border:2px solid var(--card-edge);
+  }
+  .mode-btn{
+    flex:1; padding:10px 8px; border:none; border-radius:10px; cursor:pointer;
+    font-family:var(--display); font-weight:700; font-size:13.5px; letter-spacing:.01em;
+    background:transparent; color:var(--text-dim); transition:background .12s, color .12s;
+  }
+  .mode-btn.active{ background:#fff; color:var(--hot-dark); box-shadow:0 3px 8px rgba(200,28,116,.18); }
+  .strings-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .action-btn{
+    flex:1; min-width:150px; padding:11px 14px; border-radius:12px; cursor:pointer;
+    font-family:var(--display); font-weight:700; font-size:13.5px; letter-spacing:.01em;
+    border:2px solid var(--card-edge); background:#fff; color:var(--hot-dark);
+    transition:background .12s, color .12s, border-color .12s, transform .06s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .action-btn:hover{ border-color:var(--hot); }
+  .action-btn:active{ transform:translateY(1px); }
+  .action-btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .action-btn.playing-all{ background:var(--hot); border-color:var(--hot); color:#fff; }
+
+  .record-panel{
+    margin-top:14px; background:#ffe6f2; border:2px solid var(--card-edge);
+    border-radius:14px; padding:12px 14px 14px;
+  }
+  .record-panel .settings-title{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--hot-dark); font-weight:700; margin-bottom:8px;
+  }
+  .record-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .record-btn{
+    padding:10px 18px; border:none; border-radius:999px; cursor:pointer;
+    font-family:var(--display); font-weight:700; font-size:13.5px;
+    color:#fff; background:linear-gradient(180deg,var(--coral),#c8354a);
+    box-shadow:0 4px 0 #9c1f30; display:flex; align-items:center; gap:7px;
+  }
+  .record-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #9c1f30; }
+  .record-btn.recording{ background:linear-gradient(180deg,#7a1f2e,#4a0f18); box-shadow:0 4px 0 #2d0910; }
+  .record-btn .rec-dot{
+    width:9px; height:9px; border-radius:50%; background:#fff; display:inline-block;
+  }
+  .record-btn.recording .rec-dot{ background:#fff; animation:blink 1s infinite; }
+  @keyframes blink{ 50%{opacity:.25;} }
+  .record-timer{ font-family:var(--mono); font-size:13px; color:var(--text-dim); min-width:52px; }
+  .record-exports{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .export-btn{
+    padding:9px 16px; border-radius:999px; border:2px solid var(--mint-dark); background:var(--mint);
+    color:#fff; font-family:var(--mono); font-size:11.5px; font-weight:700; letter-spacing:.03em;
+    cursor:pointer;
+  }
+  .export-btn:disabled{ opacity:.45; cursor:not-allowed; background:#bbb; border-color:#999; }
+  .export-btn.ghost{ background:#fff; color:var(--hot-dark); border-color:var(--card-edge); }
+  .record-note{ font-size:11.5px; color:var(--text-dim); margin-top:6px; font-weight:600; }
+
+  .record-visual-wrap{
+    position:relative; margin-top:10px; height:64px; border-radius:12px; overflow:hidden;
+    background:linear-gradient(180deg,#2a0a1c,#1c0713);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+    display:none;
+  }
+  .record-visual-wrap.show{ display:block; }
+  canvas#recVisualizer{ width:100%; height:100%; display:block; }
+
+  .countdown-overlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(28,7,19,.72); border-radius:12px; z-index:3;
+  }
+  .countdown-overlay.show{ display:flex; }
+  .countdown-num{
+    font-family:var(--display); font-weight:800; font-size:40px; color:#fff;
+    text-shadow:0 0 18px var(--hot); animation:pop .5s ease;
+  }
+  @keyframes pop{ 0%{ transform:scale(.4); opacity:0; } 60%{ transform:scale(1.15); opacity:1; } 100%{ transform:scale(1); } }
+
+  .track-list{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .track-item{
+    display:flex; align-items:center; gap:10px; background:#fff; border:2px solid var(--card-edge);
+    border-radius:12px; padding:8px 10px; transition:border-color .12s, box-shadow .12s;
+  }
+  .track-item.selected{ border-color:var(--mint); box-shadow:0 0 0 3px rgba(47,214,164,.2); }
+  .track-play{
+    flex:0 0 auto; width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(180deg,var(--hot),var(--hot-dark)); color:#fff; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .track-play.playing{ background:linear-gradient(180deg,var(--mint),var(--mint-dark)); }
+  .track-info{ flex:1; min-width:0; cursor:pointer; }
+  .track-name{ font-family:var(--display); font-weight:700; font-size:13.5px; color:var(--hot-dark); }
+  .track-dur{ font-family:var(--mono); font-size:10.5px; color:var(--text-dim); }
+  .track-actions{ display:flex; gap:6px; flex:0 0 auto; }
+  .track-icon-btn{
+    width:28px; height:28px; border-radius:8px; border:2px solid var(--card-edge); background:#fff;
+    color:var(--hot-dark); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center;
+  }
+  .track-icon-btn:hover{ border-color:var(--hot); }
+  .track-empty-note{ font-size:11.5px; color:var(--text-dim); margin-top:8px; font-weight:600; text-align:center; }
+
+  .mode-note{ text-align:center; font-size:12px; color:var(--text-dim); margin-top:8px; font-weight:600; }
+
+  .controls{ display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; }
+  .field{ flex:1; min-width:150px; }
+  .field label{
+    display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+    color:var(--hot-dark); text-transform:uppercase; margin-bottom:6px; font-weight:700;
+  }
+  select{
+    width:100%; padding:11px 12px; background:#fff; color:var(--text);
+    border:2px solid var(--card-edge); border-radius:12px; font-family:var(--sans); font-weight:600; font-size:14px;
+    appearance:none;
+    background-image:linear-gradient(45deg, transparent 50%, var(--hot) 50%), linear-gradient(135deg, var(--hot) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+    cursor:pointer;
+  }
+
+  .lang-switch{
+    position:absolute; top:14px; right:16px; z-index:2;
+    display:flex; gap:4px; background:#fff; padding:4px; border-radius:999px;
+    box-shadow:0 2px 0 var(--card-edge);
+  }
+  .lang-btn{
+    border:none; background:transparent; cursor:pointer; padding:5px 9px;
+    font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.03em;
+    color:var(--text-dim); border-radius:999px; transition:background .12s, color .12s;
+  }
+  .lang-btn.active{ background:var(--hot); color:#fff; }
+  @media (max-width:480px){ .lang-switch{ position:static; justify-content:center; margin:0 0 12px; } }
+
+  .mic-settings{
+    margin-top:14px; background:#ffe6f2; border:2px solid var(--card-edge);
+    border-radius:14px; padding:12px 14px 14px;
+  }
+  .mic-settings .settings-title{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--hot-dark); font-weight:700; margin-bottom:8px;
+  }
+  .mic-settings .row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .mic-settings .row:last-child{ margin-bottom:0; }
+  .mic-settings .field{ flex:1; min-width:150px; }
+  .mic-settings .field.small{ max-width:150px; }
+  .mic-settings input[type=range]{ width:100%; accent-color:var(--hot); }
+  .mic-settings .range-val{ font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+  .mic-toggles{ display:flex; gap:14px; flex-wrap:wrap; }
+  .mic-toggles label{
+    display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--text);
+    cursor:pointer;
+  }
+  .mic-refresh{
+    font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    background:#fff; border:2px solid var(--card-edge); color:var(--hot-dark);
+    border-radius:999px; padding:6px 12px; cursor:pointer; margin-top:2px;
+  }
+
+  .strings{ display:grid; grid-template-columns:repeat(auto-fit,minmax(78px,1fr)); gap:10px; margin-top:20px; }
+  .string-btn{
+    background:#fff; border:2px solid var(--card-edge); border-radius:14px;
+    padding:12px 6px 10px; text-align:center; cursor:pointer; color:var(--text);
+    transition:border-color .12s, background .12s, transform .12s;
+  }
+  .string-btn:hover{ border-color:var(--hot); transform:translateY(-2px); }
+  .string-btn.playing{ background:#ffe3f1; border-color:var(--hot); }
+  .string-btn.target{ border-color:var(--mint); box-shadow:0 0 0 3px rgba(47,214,164,.25); }
+  .string-btn .sname{ font-family:var(--display); font-weight:700; font-size:20px; }
+  .string-btn .sfreq{ display:block; font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:3px;}
+
+  @media (prefers-reduced-motion: reduce){ .needle{ transition:none; } }
+</style>
+</head>
+<body>
+
+<div class="lang-switch" id="langSwitch">
+  <button type="button" class="lang-btn" data-lang="es">ES</button>
+  <button type="button" class="lang-btn" data-lang="en">EN</button>
+  <button type="button" class="lang-btn" data-lang="pt">PT</button>
+  <button type="button" class="lang-btn" data-lang="ja">JA</button>
+</div>
+
+<div class="brand">
+  <h1>Afinador de Matilde</h1>
+</div>
+
+<div class="pedal">
+  <div class="screen">
+    <div class="status-row">
+      <span><span class="dot" id="statusDot"></span><span id="statusText">MIC APAGADO</span></span>
+      <span id="freqTag">0.0 Hz</span>
+    </div>
+
+    <div class="gauge-wrap">
+      <svg id="gauge" viewBox="0 0 440 160">
+        <g id="ticks"></g>
+        <line class="needle" id="needle" x1="220" y1="150" x2="220" y2="26" stroke="var(--hot)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="220" cy="150" r="6" fill="var(--hot)"/>
+      </svg>
+    </div>
+
+    <div class="readout">
+      <div class="note-name" id="noteName">—</div>
+      <div class="sub-readout">
+        <div><span class="cents" id="centsVal">0</span> <span id="centsUnit">centésimas</span></div>
+        <div id="targetName">objetivo: —</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mic-btn" id="micBtn">ACTIVAR MICRÓFONO</button>
+  <div class="hint" id="hint">Pulsa el botón, toca una cuerda y la afinación te guía sola.</div>
+  <button type="button" class="chroma-btn" id="chromaticToggle">Modo cromático libre: OFF</button>
+
+  <div class="mode-toggle" id="modeToggle">
+    <button type="button" class="mode-btn active" data-mode="common">Afinaciones comunes</button>
+    <button type="button" class="mode-btn" data-mode="bandas">Afinaciones de bandas</button>
+  </div>
+
+  <div class="controls">
+    <div class="field">
+      <label for="instrument" id="lblInstrument">Instrumento</label>
+      <select id="instrument">
+        <option value="guitar">Guitarra (6 cuerdas)</option>
+        <option value="guitar7">Guitarra (7 cuerdas)</option>
+        <option value="bass4">Bajo (4 cuerdas)</option>
+        <option value="bass5">Bajo (5 cuerdas)</option>
+        <option value="bass6">Bajo (6 cuerdas)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="tuning" id="lblTuning">Afinación</label>
+      <select id="tuning"></select>
+    </div>
+    <div class="field" style="max-width:120px;">
+      <label for="a4Calib" id="lblA4">Referencia A4</label>
+      <select id="a4Calib">
+        <option value="438">438 Hz</option>
+        <option value="439">439 Hz</option>
+        <option value="440" selected>440 Hz</option>
+        <option value="441">441 Hz</option>
+        <option value="442">442 Hz</option>
+        <option value="443">443 Hz</option>
+        <option value="444">444 Hz</option>
+        <option value="445">445 Hz</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="mic-settings" id="micSettings">
+    <div class="settings-title" id="micSettingsTitle">Configuración de micrófono / interfaz</div>
+    <div class="row">
+      <div class="field">
+        <label for="micDevice" id="lblMicDevice">Entrada de audio</label>
+        <select id="micDevice"><option value="">Predeterminado del sistema</option></select>
+      </div>
+      <button type="button" class="mic-refresh" id="micRefresh">Actualizar lista</button>
+    </div>
+    <div class="row">
+      <div class="field small">
+        <label for="micGain"><span id="lblMicGain">Ganancia de entrada</span> <span class="range-val" id="micGainVal">0 dB</span></label>
+        <input type="range" id="micGain" min="0" max="24" step="1" value="0">
+      </div>
+      <div class="field small">
+        <label for="noiseGateSlider"><span id="lblNoiseGate">Sensibilidad</span> <span class="range-val" id="noiseGateVal">media</span></label>
+        <input type="range" id="noiseGateSlider" min="1" max="50" step="1" value="25">
+      </div>
+    </div>
+    <div class="row">
+      <div class="mic-toggles">
+        <label><input type="checkbox" id="echoCancel"><span id="lblEcho">Cancelación de eco</span></label>
+        <label><input type="checkbox" id="noiseSuppress"><span id="lblNoise">Supresión de ruido</span></label>
+        <label><input type="checkbox" id="autoGain"><span id="lblAutoGain">Ganancia automática</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-note" id="modeNote"></div>
+  <div class="strings" id="strings"></div>
+
+  <div class="strings-actions">
+    <button type="button" class="action-btn" id="playAllBtn">▶ Reproducir todas las cuerdas</button>
+  </div>
+
+  <div class="record-panel" id="recordPanel">
+    <div class="settings-title" id="recordPanelTitle">Grabación</div>
+    <div class="record-row">
+      <button type="button" class="record-btn" id="recordBtn"><span class="rec-dot"></span><span id="recordBtnLabel">Grabar</span></button>
+      <span class="record-timer" id="recordTimer">00:00</span>
+    </div>
+    <div class="record-visual-wrap" id="recVisualWrap">
+      <canvas id="recVisualizer" width="440" height="64"></canvas>
+      <div class="countdown-overlay" id="countdownOverlay"><span class="countdown-num" id="countdownNum">3</span></div>
+    </div>
+    <div class="record-note" id="recordNote"></div>
+    <div class="track-list" id="trackList"></div>
+    <div class="track-empty-note" id="trackEmptyNote">Aún no hay pistas grabadas.</div>
+    <div class="record-exports" id="recordExports" style="display:none;">
+      <button type="button" class="export-btn" id="exportSelectedBtn">Exportar pista seleccionada</button>
+      <button type="button" class="export-btn ghost" id="exportAllBtn">Exportar todo</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+/* ================= Datos de afinaciones ================= */
+const NOTE_ORDER = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+let A4REF = 440; // referencia de afinación calibrable (438–445 Hz)
+
+function noteFreq(name, octave){
+  const idx = NOTE_ORDER.indexOf(name);
+  const semitoneFromA4 = (idx - NOTE_ORDER.indexOf('A')) + (octave-4)*12;
+  return A4REF * Math.pow(2, semitoneFromA4/12);
+}
+function mkString(name, octave){
+  const idx = NOTE_ORDER.indexOf(name);
+  const semitone = (idx - NOTE_ORDER.indexOf('A')) + (octave-4)*12;
+  return { note:name, octave, semitone, freq: A4REF * Math.pow(2, semitone/12) };
+}
+/* Recalcula todas las frecuencias del árbol TUNINGS cuando cambia la referencia A4 */
+function rescaleFrequencies(node){
+  if(Array.isArray(node)){
+    node.forEach(s=>{ if(typeof s.semitone==='number') s.freq = A4REF*Math.pow(2, s.semitone/12); });
+    return;
+  }
+  if(node && typeof node==='object'){
+    Object.values(node).forEach(rescaleFrequencies);
+  }
+}
+
+const TUNINGS = {
+  guitar: {
+    common: {
+      "Comunes": {
+        "Estándar (E A D G B E)": [mkString('E',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "Medio tono arriba (F Bb Eb Ab C F)": [mkString('F',2),mkString('A#',2),mkString('D#',3),mkString('G#',3),mkString('C',4),mkString('F',4)],
+        "Medio tono abajo (Eb Ab Db Gb Bb Eb)": [mkString('D#',2),mkString('G#',2),mkString('C#',3),mkString('F#',3),mkString('A#',3),mkString('D#',4)],
+        "Un tono abajo (D G C F A D)": [mkString('D',2),mkString('G',2),mkString('C',3),mkString('F',3),mkString('A',3),mkString('D',4)],
+        "Barítono estándar (B E A D F# B)": [mkString('B',1),mkString('E',2),mkString('A',2),mkString('D',3),mkString('F#',3),mkString('B',3)],
+        "Drop Eb / D# (D# A# D# G# C F)": [mkString('D#',2),mkString('A#',2),mkString('D#',3),mkString('G#',3),mkString('C',4),mkString('F',4)],
+        "Drop D (D A D G B E)": [mkString('D',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "Doble Drop D (D A D G B D)": [mkString('D',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('D',4)],
+        "Drop C# / Db (C# G# C# F# A# D#)": [mkString('C#',2),mkString('G#',2),mkString('C#',3),mkString('F#',3),mkString('A#',3),mkString('D#',4)],
+        "Drop C (C G C F A D)": [mkString('C',2),mkString('G',2),mkString('C',3),mkString('F',3),mkString('A',3),mkString('D',4)],
+        "Drop B (B F# B E G# C#)": [mkString('B',1),mkString('F#',2),mkString('B',2),mkString('E',3),mkString('G#',3),mkString('C#',4)],
+        "Drop Bb / A# (A# F A# D# G C)": [mkString('A#',1),mkString('F',2),mkString('A#',2),mkString('D#',3),mkString('G',3),mkString('C',4)],
+        "Drop A (A E A D F# B)": [mkString('A',1),mkString('E',2),mkString('A',2),mkString('D',3),mkString('F#',3),mkString('B',3)],
+        "Drop Ab / G# (G# D# G# C# F A#)": [mkString('G#',1),mkString('D#',2),mkString('G#',2),mkString('C#',3),mkString('F',3),mkString('A#',3)],
+        "Open D (D A D F# A D)": [mkString('D',2),mkString('A',2),mkString('D',3),mkString('F#',3),mkString('A',3),mkString('D',4)],
+        "Open D menor (D A D F A D)": [mkString('D',2),mkString('A',2),mkString('D',3),mkString('F',3),mkString('A',3),mkString('D',4)],
+        "DADGAD": [mkString('D',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('A',3),mkString('D',4)],
+        "Open E (E B E G# B E)": [mkString('E',2),mkString('B',2),mkString('E',3),mkString('G#',3),mkString('B',3),mkString('E',4)],
+        "Open E menor (E B E G B E)": [mkString('E',2),mkString('B',2),mkString('E',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "Open G (D G D G B D)": [mkString('D',2),mkString('G',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('D',4)],
+        "Open G menor (D G D G Bb D)": [mkString('D',2),mkString('G',2),mkString('D',3),mkString('G',3),mkString('A#',3),mkString('D',4)],
+        "Open A (E A C# E A E)": [mkString('E',2),mkString('A',2),mkString('C#',3),mkString('E',3),mkString('A',3),mkString('E',4)],
+        "Open C (C G C G C E)": [mkString('C',2),mkString('G',2),mkString('C',3),mkString('G',3),mkString('C',4),mkString('E',4)],
+        "Todo en cuartas (E A D G C F)": [mkString('E',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('C',4),mkString('F',4)],
+        "Todo en quintas (C G D A E B)": [mkString('C',2),mkString('G',2),mkString('D',3),mkString('A',3),mkString('E',4),mkString('B',4)],
+        "New Standard Tuning (C G D A E G)": [mkString('C',2),mkString('G',2),mkString('D',3),mkString('A',3),mkString('E',4),mkString('G',4)],
+        "Nashville (octava aguda)": [mkString('E',3),mkString('A',3),mkString('D',4),mkString('G',4),mkString('B',4),mkString('E',5)],
+      },
+    },
+    bandas: {
+      "Sonic Youth": {
+        "F#F#F#F#EB · afinación de drones graves": [mkString('F#',2),mkString('F#',2),mkString('F#',3),mkString('F#',3),mkString('E',3),mkString('B',3)],
+        "GGDDD#D · afinación abierta modal": [mkString('G',2),mkString('G',2),mkString('D',3),mkString('D',3),mkString('D#',3),mkString('D',4)],
+        "GABDEG · afinación en quintas ascendente": [mkString('G',2),mkString('A',2),mkString('B',2),mkString('D',3),mkString('E',3),mkString('G',3)],
+        "AF#EF#EB · usada por Lee Ranaldo": [mkString('A',2),mkString('F#',2),mkString('E',3),mkString('F#',3),mkString('E',3),mkString('B',3)],
+        "EGDGED · variante de Mi menor sin quinta": [mkString('E',2),mkString('G',2),mkString('D',3),mkString('G',3),mkString('E',3),mkString('D',4)],
+        "CGDGCD · afinación con Do y Sol duplicados": [mkString('C',2),mkString('G',2),mkString('D',3),mkString('G',3),mkString('C',4),mkString('D',4)],
+      },
+      "Shoegaze / noise rock (My Bloody Valentine y estilo)": {
+        "EBEF#BE · afinación característica de Kevin Shields": [mkString('E',2),mkString('B',2),mkString('E',3),mkString('F#',3),mkString('B',3),mkString('E',4)],
+        "EABGGE · variante con unísono en Sol": [mkString('E',2),mkString('A',2),mkString('B',2),mkString('G',3),mkString('G',3),mkString('E',4)],
+        "DAAAAD · tuning \"salvaje\" habitual de Kevin Shields": [mkString('D',2),mkString('A',2),mkString('A',2),mkString('A',3),mkString('A',3),mkString('D',4)],
+      },
+      "King Gizzard & the Lizard Wizard": {
+        "C#F#C#F#BE · base de su etapa microtonal (24-TET)": [mkString('C#',2),mkString('F#',2),mkString('C#',3),mkString('F#',3),mkString('B',3),mkString('E',4)],
+        "F#ADGBE · 6ª cuerda subida a F#": [mkString('F#',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "C#F#BEG#C# · \"C# tuning\", 1½ tono abajo": [mkString('C#',2),mkString('F#',2),mkString('B',2),mkString('E',3),mkString('G#',3),mkString('C#',4)],
+      },
+      "Soundgarden": {
+        "EEBBBE · unísonos dobles en Mi y Si": [mkString('E',2),mkString('E',2),mkString('B',2),mkString('B',3),mkString('B',3),mkString('E',4)],
+        "EEEEEE · las seis cuerdas afinadas a Mi": [mkString('E',2),mkString('E',3),mkString('E',3),mkString('E',4),mkString('E',4),mkString('E',5)],
+        "CGCGGE · Do abierto con unísono en Sol": [mkString('C',2),mkString('G',2),mkString('C',3),mkString('G',3),mkString('G',3),mkString('E',4)],
+      },
+      "Alice in Chains": {
+        "Eb estándar (Eb Ab Db Gb Bb Eb)": [mkString('D#',2),mkString('G#',2),mkString('C#',3),mkString('F#',3),mkString('A#',3),mkString('D#',4)],
+        "Drop Db (Db Ab Db Gb Bb Eb)": [mkString('C#',2),mkString('G#',2),mkString('C#',3),mkString('F#',3),mkString('A#',3),mkString('D#',4)],
+      },
+      "Deftones": {
+        "G# estándar, 2½ tonos abajo (G# C# F# B D# G#)": [mkString('G#',1),mkString('C#',2),mkString('F#',2),mkString('B',2),mkString('D#',3),mkString('G#',3)],
+      },
+    },
+  },
+  guitar7: {
+    common: {
+      "Comunes": {
+        "Estándar 7 cuerdas (B E A D G B E)": [mkString('B',1),mkString('E',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "Drop A 7 cuerdas (A E A D G B E)": [mkString('A',1),mkString('E',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+        "Drop G# 7 cuerdas (G# E A D G B E)": [mkString('G#',1),mkString('E',2),mkString('A',2),mkString('D',3),mkString('G',3),mkString('B',3),mkString('E',4)],
+      },
+    },
+    bandas: {
+      "Korn": {
+        "A Standard 7 · (A D G C F A D), toda la guitarra bajada una 4ª": [mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3),mkString('F',3),mkString('A',3),mkString('D',4)],
+      },
+    },
+  },
+  bass4: {
+    common: {
+      "Comunes": {
+        "Estándar (E A D G)": [mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2)],
+        "Medio tono abajo (Eb Ab Db Gb)": [mkString('D#',1),mkString('G#',1),mkString('C#',2),mkString('F#',2)],
+        "Un tono abajo (D G C F)": [mkString('D',1),mkString('G',1),mkString('C',2),mkString('F',2)],
+        "Drop D (D A D G)": [mkString('D',1),mkString('A',1),mkString('D',2),mkString('G',2)],
+        "Drop C# (C# G# C# F#)": [mkString('C#',1),mkString('G#',1),mkString('C#',2),mkString('F#',2)],
+        "Drop C (C G C F)": [mkString('C',1),mkString('G',1),mkString('C',2),mkString('F',2)],
+        "Drop B (B F# B E)": [mkString('B',0),mkString('F#',1),mkString('B',1),mkString('E',2)],
+        "Drop Bb / A# (A# F A# D#)": [mkString('A#',0),mkString('F',1),mkString('A#',1),mkString('D#',2)],
+        "Drop A (A E A D)": [mkString('A',0),mkString('E',1),mkString('A',1),mkString('D',2)],
+        "Drop Ab / G# (G# D# G# C#)": [mkString('G#',0),mkString('D#',1),mkString('G#',1),mkString('C#',2)],
+        "Tenor / afinación aguda (A D G C)": [mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3)],
+        "Todo en quintas (C G D A)": [mkString('C',1),mkString('G',1),mkString('D',2),mkString('A',2)],
+      },
+    },
+    bandas: {
+      "King Gizzard & the Lizard Wizard": {
+        "C#F#BE · 1½ tono abajo (a juego con la \"C# tuning\" de guitarra)": [mkString('C#',1),mkString('F#',1),mkString('B',1),mkString('E',2)],
+      },
+    },
+  },
+  bass5: {
+    common: {
+      "Comunes": {
+        "Estándar (B E A D G)": [mkString('B',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2)],
+        "Medio tono abajo (Bb Eb Ab Db Gb)": [mkString('A#',0),mkString('D#',1),mkString('G#',1),mkString('C#',2),mkString('F#',2)],
+        "Un tono abajo (A D G C F)": [mkString('A',0),mkString('D',1),mkString('G',1),mkString('C',2),mkString('F',2)],
+        "Drop Bb (Bb E A D G)": [mkString('A#',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2)],
+        "Drop A (A E A D G)": [mkString('A',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2)],
+        "Tenor 5 cuerdas (E A D G C)": [mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3)],
+      },
+    },
+    bandas: {},
+  },
+  bass6: {
+    common: {
+      "Comunes": {
+        "Estándar (B E A D G C)": [mkString('B',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3)],
+        "Medio tono abajo (Bb Eb Ab Db Gb B)": [mkString('A#',0),mkString('D#',1),mkString('G#',1),mkString('C#',2),mkString('F#',2),mkString('B',2)],
+        "Drop A (A E A D G C)": [mkString('A',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3)],
+      },
+    },
+    bandas: {
+      "Primus (Les Claypool)": {
+        "B E A D G C · afinación de bajo de 6 cuerdas de Les Claypool": [mkString('B',0),mkString('E',1),mkString('A',1),mkString('D',2),mkString('G',2),mkString('C',3)],
+      },
+    },
+  },
+};
+
+/* ================= Estado global ================= */
+let audioCtx=null, analyser=null, micStream=null, rafId=null;
+let currentStrings=[];
+
+const instrumentSel = document.getElementById('instrument');
+const tuningSel = document.getElementById('tuning');
+const stringsWrap = document.getElementById('strings');
+const micBtn = document.getElementById('micBtn');
+const hint = document.getElementById('hint');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const noteNameEl = document.getElementById('noteName');
+const centsVal = document.getElementById('centsVal');
+const freqTag = document.getElementById('freqTag');
+const targetName = document.getElementById('targetName');
+const needle = document.getElementById('needle');
+const ticksG = document.getElementById('ticks');
+const a4Calib = document.getElementById('a4Calib');
+const chromaticToggle = document.getElementById('chromaticToggle');
+const micDeviceSel = document.getElementById('micDevice');
+const micRefreshBtn = document.getElementById('micRefresh');
+const micGainSlider = document.getElementById('micGain');
+const micGainVal = document.getElementById('micGainVal');
+const noiseGateSlider = document.getElementById('noiseGateSlider');
+const noiseGateVal = document.getElementById('noiseGateVal');
+const echoCancelChk = document.getElementById('echoCancel');
+const noiseSuppressChk = document.getElementById('noiseSuppress');
+const autoGainChk = document.getElementById('autoGain');
+const langSwitch = document.getElementById('langSwitch');
+const playAllBtn = document.getElementById('playAllBtn');
+const recordPanelTitle = document.getElementById('recordPanelTitle');
+const recordBtn = document.getElementById('recordBtn');
+const recordBtnLabel = document.getElementById('recordBtnLabel');
+const recordTimer = document.getElementById('recordTimer');
+const recordExports = document.getElementById('recordExports');
+const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+const exportAllBtn = document.getElementById('exportAllBtn');
+const recordNote = document.getElementById('recordNote');
+const recVisualWrap = document.getElementById('recVisualWrap');
+const recVisualizer = document.getElementById('recVisualizer');
+const countdownOverlay = document.getElementById('countdownOverlay');
+const countdownNum = document.getElementById('countdownNum');
+const trackList = document.getElementById('trackList');
+const trackEmptyNote = document.getElementById('trackEmptyNote');
+
+(function drawTicks(){
+  const cx=220, cy=150, rOuter=124, rInner=108;
+  for(let c=-50;c<=50;c+=5){
+    const angle = (c/50) * 55;
+    const rad = (angle-90) * Math.PI/180;
+    const rI = (c%25===0)? rInner-14 : rInner;
+    const x1 = cx + rI*Math.cos(rad), y1 = cy + rI*Math.sin(rad);
+    const x2 = cx + rOuter*Math.cos(rad), y2 = cy + rOuter*Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('class', c===0?'tick center': (c%25===0?'tick strong':'tick'));
+    ticksG.appendChild(line);
+  }
+})();
+
+let currentMode = 'common';
+const modeNote = document.getElementById('modeNote');
+
+function populateTunings(){
+  const inst = instrumentSel.value;
+  const groups = TUNINGS[inst][currentMode];
+  tuningSel.innerHTML='';
+
+  if(!groups || Object.keys(groups).length===0){
+    tuningSel.disabled = true;
+    const opt=document.createElement('option');
+    opt.textContent=t('noTuningsForInstrument');
+    tuningSel.appendChild(opt);
+    stringsWrap.innerHTML='';
+    currentStrings=[];
+    targetName.textContent=t('targetEmpty');
+    modeNote.textContent=t('modeNoteEmptyInstrument');
+    return;
+  }
+  tuningSel.disabled = false;
+  modeNote.textContent = currentMode==='bandas' ? t('modeNoteBandas') : '';
+  Object.keys(groups).forEach(groupName=>{
+    const og = document.createElement('optgroup');
+    og.label = translateLabel(groupName);
+    Object.keys(groups[groupName]).forEach(tName=>{
+      const opt=document.createElement('option');
+      opt.value = groupName+'||'+tName;
+      opt.textContent = translateLabel(tName);
+      og.appendChild(opt);
+    });
+    tuningSel.appendChild(og);
+  });
+  loadTuning();
+}
+function loadTuning(){
+  if(typeof stopPlayAll==='function') stopPlayAll();
+  const inst = instrumentSel.value;
+  const groups = TUNINGS[inst][currentMode];
+  if(!groups || !tuningSel.value) return;
+  const [groupName,tName] = tuningSel.value.split('||');
+  currentStrings = groups[groupName][tName];
+  renderStringButtons();
+}
+function renderStringButtons(){
+  stringsWrap.innerHTML='';
+  currentStrings.forEach((s,i)=>{
+    const btn=document.createElement('div');
+    btn.className='string-btn';
+    btn.dataset.idx=i;
+    btn.innerHTML = `<span class="sname">${s.note}${s.octave}</span><span class="sfreq">${s.freq.toFixed(1)} Hz</span>`;
+    btn.addEventListener('click', ()=>playReference(s, btn));
+    stringsWrap.appendChild(btn);
+  });
+}
+
+/* ================= Tono guía: modelado físico de cuerda pulsada ================= */
+/* Karplus-Strong extendido (Jaffe & Smith, 1983): un filtro comb con feedback
+   simula la vibración real de una cuerda -- se excita con una ráfaga de ruido
+   (el "golpe" de la púa/dedo) y un filtro de amortiguación + un filtro allpass
+   de retardo fraccional la hacen decaer de forma natural y con afinación exacta
+   (no solo a semitonos, sino a la frecuencia decimal justa). Esto es mucho más
+   realista que sumar osciladores sinusoidales, porque el propio modelo genera
+   todos los armónicos e inarmonicidades de una cuerda real. */
+const KS_WORKLET_SOURCE = `
+class KarplusStrongProcessor extends AudioWorkletProcessor {
+  constructor(){
+    super();
+    this.buffer = null; this.N = 0; this.writeIdx = 0;
+    this.C = 0; this.apIn = 0; this.apOut = 0; this.damping = 0.995;
+    this.active = false;
+    this.port.onmessage = (e)=>{
+      if(e.data.type==='pluck') this.trigger(e.data.frequency, e.data.damping, e.data.brightness);
+    };
+  }
+  trigger(freq, damping, brightness){
+    const sr = sampleRate;
+    const L = sr/freq;
+    const N = Math.max(4, Math.floor(L));
+    const P = L - N; // parte fraccional -> afinación exacta vía filtro allpass
+    this.N = N;
+    this.C = (1-P)/(1+P);
+    this.damping = damping;
+    this.buffer = new Float32Array(N);
+    let prev = 0;
+    for(let i=0;i<N;i++){
+      const white = Math.random()*2-1;
+      prev = brightness*white + (1-brightness)*prev; // ráfaga de excitación tipo púa/dedo
+      this.buffer[i] = prev;
+    }
+    this.writeIdx = 0; this.apIn = 0; this.apOut = 0;
+    this.active = true;
+  }
+  process(inputs, outputs){
+    const out = outputs[0][0];
+    if(!this.active || !this.buffer){ out.fill(0); return true; }
+    const N = this.N;
+    for(let i=0;i<out.length;i++){
+      const s = this.buffer[this.writeIdx];
+      out[i] = s;
+      const nextIdx = (this.writeIdx+1)%N;
+      const avg = 0.5*(s + this.buffer[nextIdx]); // amortiguación (pasa-bajos de un polo)
+      const apOut = this.C*(avg - this.apOut) + this.apIn; // retardo fraccional (afinación exacta)
+      this.apIn = avg; this.apOut = apOut;
+      this.buffer[this.writeIdx] = this.damping*apOut;
+      this.writeIdx = nextIdx;
+    }
+    return true;
+  }
+}
+registerProcessor('karplus-strong', KarplusStrongProcessor);
+`;
+
+let workletReady = null;
+function ensureAudioCtx(){
+  if(!audioCtx){
+    const Ctor = window.AudioContext||window.webkitAudioContext;
+    // Intentamos abrir el contexto a la mayor tasa de muestreo posible para máxima fidelidad.
+    // El navegador ajusta automáticamente al máximo que soporte el hardware si el valor pedido es muy alto.
+    let created = null;
+    for(const sr of [192000, 96000, 48000]){
+      try{ created = new Ctor({ sampleRate: sr }); break; }catch(e){ created = null; }
+    }
+    audioCtx = created || new Ctor();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  if(!workletReady){
+    try{
+      const blobUrl = URL.createObjectURL(new Blob([KS_WORKLET_SOURCE], {type:'application/javascript'}));
+      workletReady = audioCtx.audioWorklet.addModule(blobUrl);
+    }catch(e){
+      workletReady = Promise.reject(e);
+    }
+  }
+  return audioCtx;
+}
+
+async function playReference(str, btn){
+  const ctx = ensureAudioCtx();
+  try{
+    await workletReady;
+    playReferencePhysical(ctx, str, btn);
+  }catch(e){
+    // navegador sin soporte de AudioWorklet: respaldo con síntesis aditiva
+    playReferenceFallback(ctx, str, btn);
+  }
+}
+
+function playReferencePhysical(ctx, str, btn){
+  const inst = instrumentSel.value;
+  const isBass = inst!=='guitar' && inst!=='guitar7';
+
+  const node = new AudioWorkletNode(ctx, 'karplus-strong');
+
+  // filtro de cuerpo/caja: resalta el rango donde resuena el cuerpo del instrumento
+  const body = ctx.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = isBass? 110 : 220;
+  body.Q.value = 0.9;
+  body.gain.value = isBass? 5 : 3.5;
+
+  // calidez: corta brillo excesivo del modelo, como las cuerdas reales
+  const warmth = ctx.createBiquadFilter();
+  warmth.type = 'lowpass';
+  warmth.frequency.value = isBass? 3200 : 6800;
+  warmth.Q.value = 0.5;
+
+  // presencia del ataque de púa/dedo
+  const presence = ctx.createBiquadFilter();
+  presence.type = 'highshelf';
+  presence.frequency.value = isBass? 1800 : 3200;
+  presence.gain.value = isBass? -2 : 1.5;
+
+  const master = ctx.createGain();
+  master.gain.value = isBass? 1.3 : 1.05;
+
+  node.connect(body).connect(warmth).connect(presence).connect(master).connect(ctx.destination);
+
+  const damping = isBass? 0.9985 : 0.9975;   // cuerdas graves sostienen más tiempo, como en la realidad
+  const brightness = isBass? 0.35 : 0.55;    // el ataque de una guitarra suena más brillante que el de un bajo
+  node.port.postMessage({type:'pluck', frequency: str.freq, damping, brightness});
+
+  const life = isBass? 3.4 : 2.6;
+  setTimeout(()=>{ try{ node.disconnect(); master.disconnect(); }catch(e){} }, life*1000+250);
+
+  document.querySelectorAll('.string-btn.playing').forEach(b=>b.classList.remove('playing'));
+  btn.classList.add('playing');
+  targetName.textContent = `${t('targetPrefix')}: ${str.note}${str.octave} · ${str.freq.toFixed(2)} Hz`;
+  setTimeout(()=>btn.classList.remove('playing'), life*1000);
+}
+
+/* Respaldo (solo si el navegador no soporta AudioWorklet) */
+function playReferenceFallback(ctx, str, btn){
+  const inst = instrumentSel.value;
+  const isBass = inst!=='guitar' && inst!=='guitar7';
+  const now = ctx.currentTime;
+
+  const master = ctx.createGain();
+  master.gain.value = 1;
+  const filt = ctx.createBiquadFilter();
+  filt.type='lowpass';
+  filt.frequency.value = isBass? 1400 : 5200;
+  filt.Q.value = 0.6;
+  master.connect(filt).connect(ctx.destination);
+
+  const harmonics = isBass? [1,2,3,4] : [1,2,3,4,5,6];
+  const decay = isBass? 2.6 : 1.9;
+  harmonics.forEach((h,i)=>{
+    const o = ctx.createOscillator();
+    o.type = i===0 ? 'triangle' : 'sine';
+    o.frequency.value = str.freq*h;
+    const g = ctx.createGain();
+    const peak = (isBass? 0.5 : 0.34) / Math.pow(h, isBass?1.6:1.25);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0005), now+0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+decay/(1+i*0.35));
+    o.connect(g).connect(master);
+    o.start(now);
+    o.stop(now+decay+0.4);
+  });
+
+  document.querySelectorAll('.string-btn.playing').forEach(b=>b.classList.remove('playing'));
+  btn.classList.add('playing');
+  targetName.textContent = `${t('targetPrefix')}: ${str.note}${str.octave} · ${str.freq.toFixed(2)} Hz`;
+  setTimeout(()=>btn.classList.remove('playing'), decay*1000);
+}
+
+/* ================= Reproducir todas las cuerdas ================= */
+let playAllActive = false;
+let playAllTimer = null;
+
+function startPlayAll(){
+  if(!currentStrings.length) return;
+  playAllActive = true;
+  playAllBtn.classList.add('playing-all');
+  playAllBtn.textContent = t('playAllStop');
+  let i = 0;
+  const stepDelay = 1350;
+  const playNext = ()=>{
+    if(!playAllActive || i>=currentStrings.length){ stopPlayAll(); return; }
+    const btn = stringsWrap.querySelector(`.string-btn[data-idx="${i}"]`);
+    playReference(currentStrings[i], btn);
+    i++;
+    playAllTimer = setTimeout(playNext, stepDelay);
+  };
+  playNext();
+}
+function stopPlayAll(){
+  playAllActive = false;
+  if(playAllTimer) clearTimeout(playAllTimer);
+  playAllBtn.classList.remove('playing-all');
+  playAllBtn.textContent = t('playAllStart');
+}
+playAllBtn.addEventListener('click', ()=>{
+  if(playAllActive){ stopPlayAll(); } else { startPlayAll(); }
+});
+
+/* ================= Grabación multipista (WAV) ================= */
+let isRecording = false;
+let isCountingDown = false;
+let recProcessor = null;
+let recSilentGain = null;
+let recAnalyser = null;
+let recVisRaf = null;
+let recBuffers = [];
+let recSampleRateActual = 44100;
+let recStartTs = 0;
+let recTimerInterval = null;
+let tracks = []; // {id, name, pcm, rate, blob, url, duration}
+let selectedTrackId = null;
+let trackCounter = 0;
+let currentPlayback = null; // {id, audio}
+
+function updateRecordTimer(){
+  const secs = Math.floor((Date.now()-recStartTs)/1000);
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  recordTimer.textContent = `${m}:${s}`;
+}
+
+function updateExportButtonsState(){
+  const hasTracks = tracks.length>0;
+  recordExports.style.display = hasTracks ? 'flex' : 'none';
+  trackEmptyNote.style.display = hasTracks ? 'none' : 'block';
+  exportSelectedBtn.disabled = !selectedTrackId;
+  exportAllBtn.disabled = !hasTracks;
+}
+
+function drawVisualizerFrame(){
+  if(!recAnalyser) return;
+  const bufferLen = recAnalyser.frequencyBinCount;
+  const data = new Uint8Array(bufferLen);
+  recAnalyser.getByteFrequencyData(data);
+  const ctx2d = recVisualizer.getContext('2d');
+  const W = recVisualizer.width, H = recVisualizer.height;
+  ctx2d.clearRect(0,0,W,H);
+  const barCount = 40;
+  const step = Math.floor(bufferLen/barCount) || 1;
+  const barW = W/barCount;
+  for(let i=0;i<barCount;i++){
+    const v = data[i*step]/255;
+    const h = Math.max(2, v*H*0.92);
+    const x = i*barW;
+    const y = H-h;
+    const grad = ctx2d.createLinearGradient(0,y,0,H);
+    grad.addColorStop(0, '#ff3d97');
+    grad.addColorStop(1, '#2fd6a4');
+    ctx2d.fillStyle = grad;
+    const r = Math.min(3, barW*0.35);
+    ctx2d.beginPath();
+    ctx2d.moveTo(x+r, y);
+    ctx2d.arcTo(x+barW-1, y, x+barW-1, y+r, r);
+    ctx2d.lineTo(x+barW-1, H);
+    ctx2d.lineTo(x, H);
+    ctx2d.arcTo(x, y, x+r, y, r);
+    ctx2d.closePath();
+    ctx2d.fill();
+  }
+  recVisRaf = requestAnimationFrame(drawVisualizerFrame);
+}
+
+function runCountdown(){
+  return new Promise(resolve=>{
+    isCountingDown = true;
+    recVisualWrap.classList.add('show');
+    countdownOverlay.classList.add('show');
+    let n = 3;
+    countdownNum.textContent = String(n);
+    countdownNum.style.animation = 'none'; void countdownNum.offsetWidth; countdownNum.style.animation = '';
+    const step = ()=>{
+      n--;
+      if(n<=0){
+        countdownOverlay.classList.remove('show');
+        isCountingDown = false;
+        resolve();
+        return;
+      }
+      countdownNum.textContent = String(n);
+      countdownNum.style.animation = 'none'; void countdownNum.offsetWidth; countdownNum.style.animation = '';
+      setTimeout(step, 700);
+    };
+    setTimeout(step, 700);
+  });
+}
+
+function startRecording(){
+  if(!micGainNode || !audioCtx){ recordNote.textContent = t('recordEmpty'); return; }
+  recBuffers = [];
+  recSampleRateActual = audioCtx.sampleRate;
+
+  recProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+  recSilentGain = audioCtx.createGain();
+  recSilentGain.gain.value = 0; // no queremos escuchar la grabación en los parlantes
+  micGainNode.connect(recProcessor);
+  recProcessor.connect(recSilentGain);
+  recSilentGain.connect(audioCtx.destination);
+  recProcessor.onaudioprocess = (e)=>{
+    recBuffers.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  };
+
+  recAnalyser = audioCtx.createAnalyser();
+  recAnalyser.fftSize = 256;
+  recAnalyser.smoothingTimeConstant = 0.75;
+  micGainNode.connect(recAnalyser);
+  recVisualWrap.classList.add('show');
+  drawVisualizerFrame();
+
+  isRecording = true;
+  recordBtn.classList.add('recording');
+  recordBtnLabel.textContent = t('recordStop');
+  recordNote.textContent = '';
+  recStartTs = Date.now();
+  recordTimer.textContent = '00:00';
+  recTimerInterval = setInterval(updateRecordTimer, 250);
+}
+
+function finishRecording(){
+  const total = recBuffers.reduce((a,b)=>a+b.length,0);
+  if(total===0){
+    recordNote.textContent = t('recordEmpty');
+    return;
+  }
+  const merged = new Float32Array(total);
+  let off=0;
+  recBuffers.forEach(b=>{ merged.set(b, off); off+=b.length; });
+  recBuffers = [];
+  trackCounter++;
+  const rate = recSampleRateActual;
+  const blob = encodeWav(merged, rate);
+  const url = URL.createObjectURL(blob);
+  const track = {
+    id: 'track_'+trackCounter+'_'+Date.now(),
+    name: t('trackName')+' '+trackCounter,
+    pcm: merged, rate, blob, url,
+    duration: merged.length/rate,
+  };
+  tracks.push(track);
+  selectedTrackId = track.id;
+  renderTrackList();
+  recordNote.textContent = t('recordDone');
+  updateExportButtonsState();
+}
+
+function stopRecording(){
+  isRecording = false;
+  clearInterval(recTimerInterval);
+  if(recProcessor){ recProcessor.disconnect(); recProcessor.onaudioprocess = null; recProcessor = null; }
+  if(recSilentGain){ recSilentGain.disconnect(); recSilentGain = null; }
+  if(recAnalyser){ recAnalyser.disconnect(); recAnalyser = null; }
+  if(recVisRaf){ cancelAnimationFrame(recVisRaf); recVisRaf = null; }
+  const ctx2d = recVisualizer.getContext('2d');
+  ctx2d.clearRect(0,0,recVisualizer.width,recVisualizer.height);
+  recVisualWrap.classList.remove('show');
+  recordBtn.classList.remove('recording');
+  recordBtnLabel.textContent = t('recordStart');
+  finishRecording();
+}
+
+function formatDuration(secs){
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(Math.floor(secs%60)).padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function stopTrackPlayback(){
+  if(currentPlayback){
+    currentPlayback.audio.pause();
+    const btn = document.querySelector(`.track-play[data-id="${currentPlayback.id}"]`);
+    if(btn) btn.classList.remove('playing');
+    currentPlayback = null;
+  }
+}
+
+function playTrack(track){
+  if(currentPlayback && currentPlayback.id===track.id){
+    stopTrackPlayback();
+    return;
+  }
+  stopTrackPlayback();
+  const audio = new Audio(track.url);
+  currentPlayback = { id: track.id, audio };
+  const btn = document.querySelector(`.track-play[data-id="${track.id}"]`);
+  if(btn) btn.classList.add('playing');
+  audio.addEventListener('ended', ()=>{
+    if(currentPlayback && currentPlayback.id===track.id) currentPlayback = null;
+    if(btn) btn.classList.remove('playing');
+  });
+  audio.play();
+}
+
+function deleteTrack(id){
+  stopTrackPlayback();
+  const idx = tracks.findIndex(tr=>tr.id===id);
+  if(idx>=0){
+    URL.revokeObjectURL(tracks[idx].url);
+    tracks.splice(idx,1);
+  }
+  if(selectedTrackId===id){
+    selectedTrackId = tracks.length ? tracks[tracks.length-1].id : null;
+  }
+  renderTrackList();
+  updateExportButtonsState();
+}
+
+function renderTrackList(){
+  trackList.innerHTML = '';
+  tracks.forEach(track=>{
+    const item = document.createElement('div');
+    item.className = 'track-item'+(track.id===selectedTrackId ? ' selected' : '');
+    item.innerHTML = `
+      <button type="button" class="track-play" data-id="${track.id}">▶</button>
+      <div class="track-info">
+        <div class="track-name">${track.name}</div>
+        <div class="track-dur">${formatDuration(track.duration)}</div>
+      </div>
+      <div class="track-actions">
+        <button type="button" class="track-icon-btn track-export" title="${t('trackExport')}">⇩</button>
+        <button type="button" class="track-icon-btn track-delete" title="${t('trackDelete')}">✕</button>
+      </div>
+    `;
+    item.querySelector('.track-play').addEventListener('click', (e)=>{ e.stopPropagation(); playTrack(track); });
+    item.querySelector('.track-info').addEventListener('click', ()=>{
+      selectedTrackId = track.id;
+      renderTrackList();
+      updateExportButtonsState();
+    });
+    item.querySelector('.track-export').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      downloadBlob(track.blob, track.name.replace(/\s+/g,'-').toLowerCase()+'.wav');
+    });
+    item.querySelector('.track-delete').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteTrack(track.id);
+    });
+    trackList.appendChild(item);
+  });
+  updateExportButtonsState();
+}
+
+recordBtn.addEventListener('click', async ()=>{
+  if(isRecording){ stopRecording(); return; }
+  if(isCountingDown) return;
+  if(!micStream){
+    await toggleMic();
+    if(!micStream) return; // el usuario no dio permiso de micrófono
+  }
+  await runCountdown();
+  startRecording();
+});
+
+exportSelectedBtn.addEventListener('click', ()=>{
+  const track = tracks.find(tr=>tr.id===selectedTrackId);
+  if(!track) return;
+  downloadBlob(track.blob, track.name.replace(/\s+/g,'-').toLowerCase()+'.wav');
+});
+
+exportAllBtn.addEventListener('click', ()=>{
+  tracks.forEach((track, i)=>{
+    setTimeout(()=>{
+      downloadBlob(track.blob, track.name.replace(/\s+/g,'-').toLowerCase()+'.wav');
+    }, i*350);
+  });
+});
+
+function encodeWav(float32, sampleRate){
+  // WAV PCM float de 32 bits (IEEE float, formato 3): conserva exactamente la resolución
+  // que entrega el motor de audio del navegador, sin cuantizar a enteros de 16 bits.
+  // Es la máxima fidelidad posible al grabar en una plataforma web.
+  const bytesPerSample = 4;
+  const buffer = new ArrayBuffer(44 + float32.length*bytesPerSample);
+  const view = new DataView(buffer);
+  const writeStr = (off,str)=>{ for(let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
+  writeStr(0,'RIFF');
+  view.setUint32(4, 36+float32.length*bytesPerSample, true);
+  writeStr(8,'WAVE');
+  writeStr(12,'fmt ');
+  view.setUint32(16,16,true);
+  view.setUint16(20,3,true);          // 3 = IEEE float
+  view.setUint16(22,1,true);          // mono
+  view.setUint32(24,sampleRate,true);
+  view.setUint32(28, sampleRate*bytesPerSample,true);
+  view.setUint16(32, bytesPerSample,true);
+  view.setUint16(34,32,true);         // 32 bits por muestra
+  writeStr(36,'data');
+  view.setUint32(40, float32.length*bytesPerSample,true);
+  let off=44;
+  for(let i=0;i<float32.length;i++, off+=4){
+    view.setFloat32(off, float32[i], true);
+  }
+  return new Blob([view], {type:'audio/wav'});
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+updateExportButtonsState();
+
+/* ================= Selección profesional de micrófono / interfaz ================= */
+let micGainNode = null; // GainNode para ajustar la ganancia de entrada en tiempo real
+
+async function refreshMicDeviceList(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const inputs = devices.filter(d=>d.kind==='audioinput');
+    const prevValue = micDeviceSel.value;
+    micDeviceSel.innerHTML = '';
+    const defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.textContent = t('optDefaultDevice');
+    micDeviceSel.appendChild(defOpt);
+    inputs.forEach((d,i)=>{
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.textContent = d.label || (t('optInputFallback')+' '+(i+1));
+      micDeviceSel.appendChild(opt);
+    });
+    const pending = micDeviceSel.dataset.pending;
+    if(pending && inputs.some(d=>d.deviceId===pending)){
+      micDeviceSel.value = pending;
+      delete micDeviceSel.dataset.pending;
+    } else if(inputs.some(d=>d.deviceId===prevValue)){
+      micDeviceSel.value = prevValue;
+    }
+  }catch(e){ /* enumerateDevices puede fallar sin permiso; se reintenta tras activar el mic */ }
+}
+if(navigator.mediaDevices && navigator.mediaDevices.addEventListener){
+  navigator.mediaDevices.addEventListener('devicechange', refreshMicDeviceList);
+}
+micRefreshBtn.addEventListener('click', refreshMicDeviceList);
+refreshMicDeviceList();
+
+function applyMicGain(){
+  const db = parseFloat(micGainSlider.value);
+  micGainVal.textContent = (db>0?'+':'')+db+' dB';
+  if(micGainNode) micGainNode.gain.value = Math.pow(10, db/20);
+  savePrefs();
+}
+micGainSlider.addEventListener('input', applyMicGain);
+
+function applyNoiseGate(){
+  const v = parseInt(noiseGateSlider.value,10); // 1..50, más alto = más sensible (detecta señales más débiles)
+  NOISE_GATE = 0.012 - (v/50)*0.0115; // rango aprox 0.0005 (muy sensible) .. 0.012 (poco sensible)
+  const label = v>=35 ? t('sensHigh') : (v<=15 ? t('sensLow') : t('sensMed'));
+  noiseGateVal.textContent = label;
+  savePrefs();
+}
+noiseGateSlider.addEventListener('input', applyNoiseGate);
+
+[echoCancelChk, noiseSuppressChk, autoGainChk].forEach(chk=>chk.addEventListener('change', savePrefs));
+
+/* ================= Detección automática de tono ================= */
+async function toggleMic(){
+  if(micStream){ stopMic(); return; }
+  try{
+    micBtn.disabled = true;
+    hint.textContent = t('hintRequesting');
+    const ctx = ensureAudioCtx();
+    const constraints = {
+      audio:{
+        echoCancellation: echoCancelChk.checked,
+        noiseSuppression: noiseSuppressChk.checked,
+        autoGainControl: autoGainChk.checked,
+        channelCount: { ideal: 1 },
+        sampleRate: { ideal: 192000 },
+        sampleSize: { ideal: 24 },
+      }
+    };
+    if(micDeviceSel.value) constraints.audio.deviceId = { exact: micDeviceSel.value };
+    micStream = await navigator.mediaDevices.getUserMedia(constraints);
+    await refreshMicDeviceList(); // ahora que hay permiso, los labels de los dispositivos ya son visibles
+    const source = ctx.createMediaStreamSource(micStream);
+    const highpass = ctx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = 18; // quita zumbido/DC sin cortar el B0 grave del bajo (~30.9 Hz)
+    highpass.Q.value = 0.7;
+    micGainNode = ctx.createGain();
+    micGainNode.gain.value = Math.pow(10, parseFloat(micGainSlider.value)/20);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 4096; // más resolución para notas graves (bajo 6 cuerdas, drop tunings)
+    analyser.smoothingTimeConstant = 0;
+    source.connect(highpass);
+    highpass.connect(micGainNode);
+    micGainNode.connect(analyser);
+    micBtn.textContent=t('micOn');
+    micBtn.classList.add('on');
+    statusDot.classList.add('live');
+    statusText.textContent=t('statusListening');
+    hint.textContent=t('hintListening');
+    detectPitchLoop();
+  }catch(err){
+    hint.textContent=t('hintMicError');
+  }finally{
+    micBtn.disabled=false;
+  }
+}
+function stopMic(){
+  if(rafId) cancelAnimationFrame(rafId);
+  if(micStream){ micStream.getTracks().forEach(t=>t.stop()); }
+  micStream=null; analyser=null; micGainNode=null;
+  micBtn.textContent=t('micOff');
+  micBtn.classList.remove('on');
+  statusDot.classList.remove('live');
+  statusText.textContent=t('statusOff');
+  hint.textContent=t('hintStart');
+  noteNameEl.textContent='—'; noteNameEl.classList.remove('in-tune');
+  centsVal.textContent='0'; centsVal.className='cents';
+  freqTag.textContent='0.0 Hz';
+  targetName.textContent = chromaticMode ? t('targetChromatic') : t('targetEmpty');
+  document.querySelectorAll('.string-btn.target').forEach(b=>b.classList.remove('target'));
+  freqHistory.length=0; lockedIdx=-1; candidateIdx=-1; candidateStreak=0; displayedCents=0;
+  setNeedle(0);
+}
+
+/* ---- Detector de tono: YIN (Cheveigné & Kawahara, 2002) ----
+   Es el algoritmo que usan la mayoría de afinadores profesionales
+   (mucho más preciso y estable en graves que la autocorrelación simple). */
+const YIN_THRESHOLD = 0.12;      // qué tan "limpio" debe verse el periodo (más bajo = más estricto)
+let NOISE_GATE = 0.0025;         // nivel mínimo de señal para intentar detectar (sensibilidad de entrada, ajustable)
+
+function rmsOf(buffer){
+  let sum=0;
+  for(let i=0;i<buffer.length;i++) sum += buffer[i]*buffer[i];
+  return Math.sqrt(sum/buffer.length);
+}
+
+function yinDetect(buffer, sampleRate){
+  const bufferSize = buffer.length;
+  const halfSize = Math.floor(bufferSize/2);
+  const yinBuffer = new Float32Array(halfSize);
+
+  // 1) función de diferencia
+  for(let tau=0; tau<halfSize; tau++){
+    let sum = 0;
+    for(let i=0;i<halfSize;i++){
+      const delta = buffer[i]-buffer[i+tau];
+      sum += delta*delta;
+    }
+    yinBuffer[tau] = sum;
+  }
+
+  // 2) normalización acumulativa (CMND)
+  yinBuffer[0] = 1;
+  let runningSum = 0;
+  for(let tau=1; tau<halfSize; tau++){
+    runningSum += yinBuffer[tau];
+    yinBuffer[tau] = runningSum===0 ? 1 : yinBuffer[tau]*tau/runningSum;
+  }
+
+  // 3) primer mínimo bajo el umbral (evita octavas falsas)
+  let tauEstimate = -1;
+  for(let tau=2; tau<halfSize; tau++){
+    if(yinBuffer[tau] < YIN_THRESHOLD){
+      while(tau+1<halfSize && yinBuffer[tau+1] < yinBuffer[tau]) tau++;
+      tauEstimate = tau;
+      break;
+    }
+  }
+  if(tauEstimate===-1) return {freq:-1, clarity:0};
+
+  // 4) interpolación parabólica para precisión sub-muestra
+  const x0 = tauEstimate>1 ? tauEstimate-1 : tauEstimate;
+  const x2 = tauEstimate+1<halfSize ? tauEstimate+1 : tauEstimate;
+  let betterTau = tauEstimate;
+  if(x0!==tauEstimate && x2!==tauEstimate){
+    const s0=yinBuffer[x0], s1=yinBuffer[tauEstimate], s2=yinBuffer[x2];
+    const denom = (2*s1-s2-s0);
+    if(denom!==0) betterTau = tauEstimate + (s2-s0)/(2*denom);
+  }
+
+  const clarity = 1 - yinBuffer[tauEstimate]; // 0..1, qué tan periódica/limpia es la señal
+  return { freq: sampleRate/betterTau, clarity };
+}
+
+function freqToChromaticName(freq){
+  const semitonesFromA4 = 12 * Math.log2(freq/A4REF);
+  const rounded = Math.round(semitonesFromA4);
+  let idx = ((rounded % 12)+12+NOTE_ORDER.indexOf('A'))%12;
+  const noteName = NOTE_ORDER[idx];
+  const octave = 4 + Math.floor((rounded+NOTE_ORDER.indexOf('A'))/12);
+  return noteName+octave;
+}
+function nearestChromaticCents(freq){
+  const semitonesFromA4 = 12 * Math.log2(freq/A4REF);
+  const rounded = Math.round(semitonesFromA4);
+  return (semitonesFromA4-rounded)*100;
+}
+
+function nearestStringMatch(freq){
+  // También evalúa freq/2 y freq*2: los micrófonos a veces detectan un armónico
+  // en vez del fundamental, lo que antes hacía "saltar" a la cuerda equivocada
+  // una octava arriba o abajo. Los candidatos armónicos llevan una pequeña
+  // penalización para que solo ganen si calzan claramente mejor.
+  let best = {idx:0, cents:Infinity, score:Infinity};
+  const candidates = [{f:freq, penalty:0}, {f:freq/2, penalty:9}, {f:freq*2, penalty:9}];
+  currentStrings.forEach((s,i)=>{
+    candidates.forEach(({f:cf, penalty})=>{
+      const cents = 1200*Math.log2(cf/s.freq);
+      const score = Math.abs(cents)+penalty;
+      if(score < best.score){ best = {idx:i, cents, score}; }
+    });
+  });
+  return {idx:best.idx, cents:best.cents};
+}
+
+function setNeedle(cents){
+  const clamped = Math.max(-50, Math.min(50, cents));
+  const angle = (clamped/50)*55;
+  needle.setAttribute('transform', `rotate(${angle} 220 150)`);
+}
+
+/* ---- Estabilización: mediana de las últimas lecturas + suavizado de la aguja ----
+   Esto es lo que hace que un afinador se sienta "profesional": la nota no debe
+   temblar ni saltar de una cuerda a otra por un armónico o ruido pasajero. */
+const FREQ_HISTORY_SIZE = 8;
+let freqHistory = [];
+let displayedCents = 0;      // valor suavizado que mueve la aguja (evita saltos bruscos)
+let lockedIdx = -1;          // cuerda "enganchada" actualmente (con histéresis)
+let candidateIdx = -1;
+let candidateStreak = 0;
+let silenceFrames = 0;
+let chromaticMode = false;   // modo cromático libre: ignora la afinación seleccionada
+
+function median(arr){
+  const s = [...arr].sort((a,b)=>a-b);
+  return s[Math.floor(s.length/2)];
+}
+
+const timeData = new Float32Array(4096);
+function detectPitchLoop(){
+  if(!analyser) return;
+  analyser.getFloatTimeDomainData(timeData);
+  const rms = rmsOf(timeData);
+
+  if(rms < NOISE_GATE || (!chromaticMode && currentStrings.length===0)){
+    silenceFrames++;
+    if(silenceFrames>10){ freqHistory.length=0; lockedIdx=-1; candidateIdx=-1; candidateStreak=0; }
+    rafId = requestAnimationFrame(detectPitchLoop);
+    return;
+  }
+  silenceFrames = 0;
+
+  const {freq, clarity} = yinDetect(timeData, audioCtx.sampleRate);
+
+  if(freq===-1 || freq<20 || freq>1200 || clarity<0.85){
+    rafId = requestAnimationFrame(detectPitchLoop);
+    return;
+  }
+
+  freqHistory.push(freq);
+  if(freqHistory.length>FREQ_HISTORY_SIZE) freqHistory.shift();
+  if(freqHistory.length<3){
+    rafId = requestAnimationFrame(detectPitchLoop);
+    return;
+  }
+  const stableFreq = median(freqHistory);
+
+  let cents, labelHtml;
+  if(chromaticMode){
+    cents = nearestChromaticCents(stableFreq);
+    document.querySelectorAll('.string-btn.target').forEach(b=>b.classList.remove('target'));
+    targetName.textContent = t('targetChromatic');
+  } else {
+    const {idx: bestIdx} = nearestStringMatch(stableFreq);
+    // histéresis: solo cambia de cuerda "enganchada" si el nuevo candidato se
+    // repite varios frames seguidos, o si el salto es tan grande que es
+    // evidente que se tocó otra cuerda. Así la aguja no tiembla entre dos
+    // cuerdas cercanas en afinaciones abiertas o drop.
+    if(lockedIdx===-1){
+      lockedIdx = bestIdx; candidateIdx=-1; candidateStreak=0;
+    } else if(bestIdx !== lockedIdx){
+      if(bestIdx===candidateIdx) candidateStreak++; else { candidateIdx=bestIdx; candidateStreak=1; }
+      const centsFromLocked = 1200*Math.log2(stableFreq/currentStrings[lockedIdx].freq);
+      if(candidateStreak>=4 || Math.abs(centsFromLocked)>150){
+        lockedIdx = bestIdx; candidateStreak=0; candidateIdx=-1;
+      }
+    } else {
+      candidateStreak=0; candidateIdx=-1;
+    }
+    const target = currentStrings[lockedIdx];
+    cents = 1200*Math.log2(stableFreq/target.freq);
+    targetName.textContent = `${t('targetPrefix')}: ${target.note}${target.octave} · ${target.freq.toFixed(2)} Hz`;
+    document.querySelectorAll('.string-btn').forEach(b=>b.classList.toggle('target', Number(b.dataset.idx)===lockedIdx));
+  }
+
+  const clampedCents = Math.max(-60, Math.min(60, cents));
+  displayedCents += (clampedCents - displayedCents) * 0.3;
+
+  noteNameEl.textContent = freqToChromaticName(stableFreq);
+  freqTag.textContent = stableFreq.toFixed(1)+' Hz';
+  centsVal.textContent = (cents>0? '+':'')+Math.round(cents);
+  const inTune = Math.abs(cents)<=4;
+  noteNameEl.classList.toggle('in-tune', inTune);
+  centsVal.className = 'cents ' + (inTune?'ok': (cents<0?'flat':'sharp'));
+  setNeedle(displayedCents);
+
+  rafId = requestAnimationFrame(detectPitchLoop);
+}
+
+/* ================= Idioma / i18n ================= */
+let currentLang = 'es';
+
+const I18N = {
+  es:{
+    statusOff:'MIC APAGADO', statusListening:'ESCUCHANDO',
+    micOn:'DESACTIVAR MICRÓFONO', micOff:'ACTIVAR MICRÓFONO',
+    hintStart:'Pulsa el botón y permite el acceso al micrófono para empezar a afinar.',
+    hintReady:'Pulsa el botón, toca una cuerda y la afinación te guía sola.',
+    hintListening:'Toca una cuerda: la cuerda objetivo se detecta sola.',
+    hintRequesting:'Solicitando acceso al micrófono…',
+    hintMicError:'No se pudo acceder al micrófono. Revisa los permisos del navegador.',
+    targetEmpty:'objetivo: —', targetChromatic:'objetivo: nota cromática más cercana', targetPrefix:'objetivo',
+    chromaOn:'Modo cromático libre: ON', chromaOff:'Modo cromático libre: OFF',
+    hintChromaOn:'Modo cromático: detecta cualquier nota, sin importar la afinación elegida.',
+    centsUnit:'centésimas',
+    modeCommon:'Afinaciones comunes', modeBandas:'Afinaciones de bandas',
+    lblInstrument:'Instrumento', lblTuning:'Afinación', lblA4:'Referencia A4',
+    noTuningsForInstrument:'— sin afinaciones de banda para este instrumento —',
+    modeNoteBandas:'Afinaciones usadas por bandas concretas en canciones o discos reales.',
+    modeNoteEmptyInstrument:'Todavía no tengo afinaciones de banda documentadas para este instrumento. Prueba con guitarra o con bajo de 4 cuerdas.',
+    micSettingsTitle:'Configuración de micrófono / interfaz',
+    lblMicDevice:'Entrada de audio', optDefaultDevice:'Predeterminado del sistema', optInputFallback:'Entrada',
+    micRefresh:'Actualizar lista',
+    lblMicGain:'Ganancia de entrada', lblNoiseGate:'Sensibilidad',
+    sensLow:'baja', sensMed:'media', sensHigh:'alta',
+    lblEcho:'Cancelación de eco', lblNoise:'Supresión de ruido', lblAutoGain:'Ganancia automática',
+    instrument:{guitar:'Guitarra (6 cuerdas)', guitar7:'Guitarra (7 cuerdas)', bass4:'Bajo (4 cuerdas)', bass5:'Bajo (5 cuerdas)', bass6:'Bajo (6 cuerdas)'},
+    playAllStart:'▶ Reproducir todas las cuerdas', playAllStop:'■ Detener reproducción',
+    recordPanelTitle:'Grabación', recordStart:'Grabar', recordStop:'Detener grabación',
+    recordEmpty:'No se capturó audio. Verifica el micrófono e inténtalo de nuevo.',
+    recordDone:'Pista grabada. Puedes escucharla, seguir grabando o exportarla.',
+    trackName:'Pista', trackExport:'Exportar pista', trackDelete:'Eliminar pista',
+    exportSelected:'Exportar pista seleccionada', exportAll:'Exportar todo',
+    trackEmptyNote:'Aún no hay pistas grabadas.',
+  },
+  en:{
+    statusOff:'MIC OFF', statusListening:'LISTENING',
+    micOn:'TURN OFF MICROPHONE', micOff:'TURN ON MICROPHONE',
+    hintStart:'Press the button and allow microphone access to start tuning.',
+    hintReady:'Press the button, play a string, and the tuner guides you automatically.',
+    hintListening:'Play a string: the target string is detected automatically.',
+    hintRequesting:'Requesting microphone access…',
+    hintMicError:'Could not access the microphone. Check your browser permissions.',
+    targetEmpty:'target: —', targetChromatic:'target: nearest chromatic note', targetPrefix:'target',
+    chromaOn:'Free chromatic mode: ON', chromaOff:'Free chromatic mode: OFF',
+    hintChromaOn:'Chromatic mode: detects any note, regardless of the selected tuning.',
+    centsUnit:'cents',
+    modeCommon:'Common tunings', modeBandas:'Band tunings',
+    lblInstrument:'Instrument', lblTuning:'Tuning', lblA4:'A4 reference',
+    noTuningsForInstrument:'— no band tunings for this instrument —',
+    modeNoteBandas:'Tunings used by specific bands in real songs or albums.',
+    modeNoteEmptyInstrument:'No band tunings documented yet for this instrument. Try guitar or 4-string bass.',
+    micSettingsTitle:'Microphone / audio interface settings',
+    lblMicDevice:'Audio input', optDefaultDevice:'System default', optInputFallback:'Input',
+    micRefresh:'Refresh list',
+    lblMicGain:'Input gain', lblNoiseGate:'Sensitivity',
+    sensLow:'low', sensMed:'medium', sensHigh:'high',
+    lblEcho:'Echo cancellation', lblNoise:'Noise suppression', lblAutoGain:'Auto gain control',
+    instrument:{guitar:'Guitar (6 strings)', guitar7:'Guitar (7 strings)', bass4:'Bass (4 strings)', bass5:'Bass (5 strings)', bass6:'Bass (6 strings)'},
+    playAllStart:'▶ Play all strings', playAllStop:'■ Stop playback',
+    recordPanelTitle:'Recording', recordStart:'Record', recordStop:'Stop recording',
+    recordEmpty:'No audio was captured. Check your microphone and try again.',
+    recordDone:'Track recorded. You can play it back, keep recording, or export it.',
+    trackName:'Track', trackExport:'Export track', trackDelete:'Delete track',
+    exportSelected:'Export selected track', exportAll:'Export all',
+    trackEmptyNote:'No tracks recorded yet.',
+  },
+  pt:{
+    statusOff:'MIC DESLIGADO', statusListening:'OUVINDO',
+    micOn:'DESATIVAR MICROFONE', micOff:'ATIVAR MICROFONE',
+    hintStart:'Toque o botão e permita o acesso ao microfone para começar a afinar.',
+    hintReady:'Toque o botão, toque uma corda e a afinação te guia sozinha.',
+    hintListening:'Toque uma corda: a corda alvo é detectada automaticamente.',
+    hintRequesting:'Solicitando acesso ao microfone…',
+    hintMicError:'Não foi possível acessar o microfone. Verifique as permissões do navegador.',
+    targetEmpty:'alvo: —', targetChromatic:'alvo: nota cromática mais próxima', targetPrefix:'alvo',
+    chromaOn:'Modo cromático livre: ON', chromaOff:'Modo cromático livre: OFF',
+    hintChromaOn:'Modo cromático: detecta qualquer nota, independente da afinação escolhida.',
+    centsUnit:'cents',
+    modeCommon:'Afinações comuns', modeBandas:'Afinações de bandas',
+    lblInstrument:'Instrumento', lblTuning:'Afinação', lblA4:'Referência A4',
+    noTuningsForInstrument:'— sem afinações de banda para este instrumento —',
+    modeNoteBandas:'Afinações usadas por bandas específicas em músicas ou álbuns reais.',
+    modeNoteEmptyInstrument:'Ainda não há afinações de banda documentadas para este instrumento. Tente violão ou baixo de 4 cordas.',
+    micSettingsTitle:'Configuração de microfone / interface de áudio',
+    lblMicDevice:'Entrada de áudio', optDefaultDevice:'Padrão do sistema', optInputFallback:'Entrada',
+    micRefresh:'Atualizar lista',
+    lblMicGain:'Ganho de entrada', lblNoiseGate:'Sensibilidade',
+    sensLow:'baixa', sensMed:'média', sensHigh:'alta',
+    lblEcho:'Cancelamento de eco', lblNoise:'Supressão de ruído', lblAutoGain:'Controle automático de ganho',
+    instrument:{guitar:'Violão/Guitarra (6 cordas)', guitar7:'Guitarra (7 cordas)', bass4:'Baixo (4 cordas)', bass5:'Baixo (5 cordas)', bass6:'Baixo (6 cordas)'},
+    playAllStart:'▶ Tocar todas as cordas', playAllStop:'■ Parar reprodução',
+    recordPanelTitle:'Gravação', recordStart:'Gravar', recordStop:'Parar gravação',
+    recordEmpty:'Nenhum áudio foi capturado. Verifique o microfone e tente novamente.',
+    recordDone:'Faixa gravada. Você pode ouvi-la, continuar gravando ou exportá-la.',
+    trackName:'Faixa', trackExport:'Exportar faixa', trackDelete:'Excluir faixa',
+    exportSelected:'Exportar faixa selecionada', exportAll:'Exportar tudo',
+    trackEmptyNote:'Ainda não há faixas gravadas.',
+  },
+  ja:{
+    statusOff:'マイク オフ', statusListening:'リスニング中',
+    micOn:'マイクをオフにする', micOff:'マイクをオンにする',
+    hintStart:'ボタンを押してマイクへのアクセスを許可し、チューニングを開始してください。',
+    hintReady:'ボタンを押して弦を鳴らすと、自動的にチューニングをガイドします。',
+    hintListening:'弦を鳴らすと、対象の弦が自動的に検出されます。',
+    hintRequesting:'マイクへのアクセスを要求しています…',
+    hintMicError:'マイクにアクセスできませんでした。ブラウザの権限を確認してください。',
+    targetEmpty:'目標: —', targetChromatic:'目標: 最も近い半音', targetPrefix:'目標',
+    chromaOn:'フリークロマチックモード: ON', chromaOff:'フリークロマチックモード: OFF',
+    hintChromaOn:'クロマチックモード: 選択したチューニングに関係なく、あらゆる音を検出します。',
+    centsUnit:'セント',
+    modeCommon:'一般的なチューニング', modeBandas:'バンドのチューニング',
+    lblInstrument:'楽器', lblTuning:'チューニング', lblA4:'A4基準',
+    noTuningsForInstrument:'— この楽器のバンドチューニングはありません —',
+    modeNoteBandas:'実際の楽曲やアルバムで特定のバンドが使用したチューニングです。',
+    modeNoteEmptyInstrument:'この楽器のバンドチューニングはまだ収録されていません。ギターまたは4弦ベースをお試しください。',
+    micSettingsTitle:'マイク / オーディオインターフェース設定',
+    lblMicDevice:'オーディオ入力', optDefaultDevice:'システムのデフォルト', optInputFallback:'入力',
+    micRefresh:'リストを更新',
+    lblMicGain:'入力ゲイン', lblNoiseGate:'感度',
+    sensLow:'低', sensMed:'中', sensHigh:'高',
+    lblEcho:'エコーキャンセレーション', lblNoise:'ノイズ抑制', lblAutoGain:'オートゲインコントロール',
+    instrument:{guitar:'ギター(6弦)', guitar7:'ギター(7弦)', bass4:'ベース(4弦)', bass5:'ベース(5弦)', bass6:'ベース(6弦)'},
+    playAllStart:'▶ すべての弦を再生', playAllStop:'■ 再生を停止',
+    recordPanelTitle:'録音', recordStart:'録音開始', recordStop:'録音停止',
+    recordEmpty:'音声を録音できませんでした。マイクを確認してもう一度お試しください。',
+    recordDone:'トラックを録音しました。再生したり、続けて録音したり、書き出したりできます。',
+    trackName:'トラック', trackExport:'トラックを書き出す', trackDelete:'トラックを削除',
+    exportSelected:'選択したトラックを書き出す', exportAll:'すべて書き出す',
+    trackEmptyNote:'まだ録音されたトラックはありません。',
+  },
+};
+
+function t(key){
+  return (I18N[currentLang] && I18N[currentLang][key]) || I18N.es[key] || key;
+}
+
+/* Traducción automática por sustitución de frases para los cientos de nombres
+   de afinaciones (datos). Cubre los patrones técnicos más comunes; los nombres
+   de nota (E, A, D, G, B, C#…), nombres de bandas y términos ya internacionales
+   como "Drop" u "Open" se dejan intactos. */
+const PHRASE_MAP = [
+  ['Medio tono arriba', {en:'Half step up', pt:'Meio tom acima', ja:'半音上げ'}],
+  ['Medio tono abajo', {en:'Half step down', pt:'Meio tom abaixo', ja:'半音下げ'}],
+  ['Un tono abajo', {en:'Whole step down', pt:'Um tom abaixo', ja:'全音下げ'}],
+  ['Un tono arriba', {en:'Whole step up', pt:'Um tom acima', ja:'全音上げ'}],
+  ['Doble Drop', {en:'Double Drop', pt:'Duplo Drop', ja:'ダブルドロップ'}],
+  ['Barítono estándar', {en:'Standard baritone', pt:'Barítono padrão', ja:'バリトン・スタンダード'}],
+  ['estándar', {en:'standard', pt:'padrão', ja:'スタンダード'}],
+  ['Estándar', {en:'Standard', pt:'Padrão', ja:'スタンダード'}],
+  ['octava aguda', {en:'high octave', pt:'oitava aguda', ja:'高いオクターブ'}],
+  ['todo en cuartas', {en:'all in fourths', pt:'tudo em quartas', ja:'すべて4度'}],
+  ['Todo en cuartas', {en:'All in fourths', pt:'Tudo em quartas', ja:'すべて4度'}],
+  ['todo en quintas', {en:'all in fifths', pt:'tudo em quintas', ja:'すべて5度'}],
+  ['Todo en quintas', {en:'All in fifths', pt:'Tudo em quintas', ja:'すべて5度'}],
+  ['en quintas ascendente', {en:'ascending fifths', pt:'quintas ascendentes', ja:'上行5度'}],
+  ['afinación abierta modal', {en:'open modal tuning', pt:'afinação aberta modal', ja:'オープン・モーダル・チューニング'}],
+  ['drones graves', {en:'low drones', pt:'drones graves', ja:'低音ドローン'}],
+  ['toda la guitarra bajada una 4ª', {en:'whole guitar tuned down a 4th', pt:'guitarra inteira baixada uma 4ª', ja:'ギター全体を4度下げ'}],
+  ['tonos abajo', {en:'steps down', pt:'tons abaixo', ja:'音下げ'}],
+  ['tono abajo', {en:'step down', pt:'tom abaixo', ja:'音下げ'}],
+  ['tonos arriba', {en:'steps up', pt:'tons acima', ja:'音上げ'}],
+  ['unísonos dobles', {en:'double unisons', pt:'uníssonos duplos', ja:'ダブルユニゾン'}],
+  ['unísono', {en:'unison', pt:'uníssono', ja:'ユニゾン'}],
+  ['sin quinta', {en:'without a fifth', pt:'sem quinta', ja:'5度なし'}],
+  ['variante de', {en:'variant of', pt:'variante de', ja:'のバリアント'}],
+  ['variante con', {en:'variant with', pt:'variante com', ja:'のバリアント（'}],
+  ['variante', {en:'variant', pt:'variante', ja:'バリアント'}],
+  ['duplicados', {en:'duplicated', pt:'duplicados', ja:'重複'}],
+  ['usada por', {en:'used by', pt:'usada por', ja:'使用:'}],
+  ['usado por', {en:'used by', pt:'usado por', ja:'使用:'}],
+  ['característica de', {en:'signature tuning of', pt:'característica de', ja:'の特徴的な'}],
+  ['base de su etapa microtonal', {en:'basis of their microtonal era', pt:'base de sua fase microtonal', ja:'マイクロトーナル期の基盤'}],
+  ['cuerda subida a', {en:'string raised to', pt:'corda subida para', ja:'弦を上げて'}],
+  ['cuerdas', {en:'strings', pt:'cordas', ja:'弦'}],
+  ['cuerda', {en:'string', pt:'corda', ja:'弦'}],
+  ['afinación de', {en:'tuning of', pt:'afinação de', ja:'のチューニング'}],
+  ['afinación con', {en:'tuning with', pt:'afinação com', ja:'のチューニング（'}],
+  ['afinación en', {en:'tuning in', pt:'afinação em', ja:'のチューニング'}],
+  ['afinación', {en:'tuning', pt:'afinação', ja:'チューニング'}],
+  ['Comunes', {en:'Common', pt:'Comuns', ja:'共通'}],
+  ['menor', {en:'minor', pt:'menor', ja:'マイナー'}],
+  ['abajo', {en:'down', pt:'abaixo', ja:'ダウン'}],
+  ['arriba', {en:'up', pt:'acima', ja:'アップ'}],
+  ['modal', {en:'modal', pt:'modal', ja:'モーダル'}],
+];
+function translateLabel(text){
+  if(currentLang==='es' || !text) return text;
+  let out = text;
+  PHRASE_MAP.forEach(([es, tr])=>{
+    if(!tr[currentLang]) return;
+    out = out.split(es).join(tr[currentLang]);
+  });
+  return out;
+}
+
+function applyStaticTexts(){
+  statusText.textContent = micStream ? t('statusListening') : t('statusOff');
+  micBtn.textContent = micStream ? t('micOn') : t('micOff');
+  hint.textContent = micStream ? t('hintListening') : (chromaticMode ? t('hintChromaOn') : t('hintReady'));
+  targetName.textContent = chromaticMode ? t('targetChromatic') : t('targetEmpty');
+  chromaticToggle.textContent = t(chromaticMode ? 'chromaOn' : 'chromaOff');
+  document.getElementById('centsUnit').textContent = t('centsUnit');
+  document.getElementById('lblInstrument').textContent = t('lblInstrument');
+  document.getElementById('lblTuning').textContent = t('lblTuning');
+  document.getElementById('lblA4').textContent = t('lblA4');
+  document.getElementById('micSettingsTitle').textContent = t('micSettingsTitle');
+  document.getElementById('lblMicDevice').textContent = t('lblMicDevice');
+  document.getElementById('lblMicGain').textContent = t('lblMicGain');
+  document.getElementById('lblNoiseGate').textContent = t('lblNoiseGate');
+  document.getElementById('lblEcho').textContent = t('lblEcho');
+  document.getElementById('lblNoise').textContent = t('lblNoise');
+  document.getElementById('lblAutoGain').textContent = t('lblAutoGain');
+  micRefreshBtn.textContent = t('micRefresh');
+  document.querySelectorAll('.mode-btn').forEach(b=>{
+    b.textContent = b.dataset.mode==='common' ? t('modeCommon') : t('modeBandas');
+  });
+  Array.from(instrumentSel.options).forEach(opt=>{
+    const dict = I18N[currentLang] && I18N[currentLang].instrument;
+    if(dict && dict[opt.value]) opt.textContent = dict[opt.value];
+  });
+  micDeviceSel.options[0].textContent = t('optDefaultDevice');
+  applyNoiseGate();
+  playAllBtn.textContent = playAllActive ? t('playAllStop') : t('playAllStart');
+  recordPanelTitle.textContent = t('recordPanelTitle');
+  recordBtnLabel.textContent = isRecording ? t('recordStop') : t('recordStart');
+  exportSelectedBtn.textContent = t('exportSelected');
+  exportAllBtn.textContent = t('exportAll');
+  trackEmptyNote.textContent = t('trackEmptyNote');
+  if(typeof renderTrackList==='function' && tracks && tracks.length) renderTrackList();
+}
+
+function setLanguage(lang){
+  currentLang = I18N[lang] ? lang : 'es';
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+  applyStaticTexts();
+  populateTunings(); // re-renderiza nombres de afinaciones e instrumentos traducidos
+  savePrefs();
+}
+langSwitch.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.lang-btn');
+  if(!btn) return;
+  setLanguage(btn.dataset.lang);
+});
+
+/* ================= Preferencias (localStorage) ================= */
+const PREF_KEY = 'afinadorMatilde:prefs';
+function savePrefs(){
+  try{
+    localStorage.setItem(PREF_KEY, JSON.stringify({
+      instrument: instrumentSel.value,
+      tuning: tuningSel.value,
+      mode: currentMode,
+      a4: A4REF,
+      chromatic: chromaticMode,
+      lang: currentLang,
+      micDeviceId: micDeviceSel.value,
+      micGain: micGainSlider.value,
+      noiseGate: noiseGateSlider.value,
+      echoCancellation: echoCancelChk.checked,
+      noiseSuppression: noiseSuppressChk.checked,
+      autoGainControl: autoGainChk.checked,
+    }));
+  }catch(e){ /* almacenamiento no disponible, seguimos sin persistir */ }
+}
+function loadPrefs(){
+  try{
+    const raw = localStorage.getItem(PREF_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+a4Calib.addEventListener('change', ()=>{
+  A4REF = parseFloat(a4Calib.value);
+  rescaleFrequencies(TUNINGS);
+  renderStringButtons();
+  if(currentStrings.length){
+    targetName.textContent = t('targetEmpty');
+  }
+  savePrefs();
+});
+
+chromaticToggle.addEventListener('click', ()=>{
+  chromaticMode = !chromaticMode;
+  chromaticToggle.classList.toggle('active', chromaticMode);
+  chromaticToggle.textContent = t(chromaticMode ? 'chromaOn' : 'chromaOff');
+  lockedIdx=-1; candidateIdx=-1; candidateStreak=0; freqHistory.length=0;
+  document.querySelectorAll('.string-btn.target').forEach(b=>b.classList.remove('target'));
+  targetName.textContent = chromaticMode ? t('targetChromatic') : t('targetEmpty');
+  hint.textContent = chromaticMode
+    ? t('hintChromaOn')
+    : (micStream ? t('hintListening') : t('hintReady'));
+  savePrefs();
+});
+
+/* ================= Eventos ================= */
+instrumentSel.addEventListener('change', ()=>{ populateTunings(); savePrefs(); });
+tuningSel.addEventListener('change', ()=>{ loadTuning(); savePrefs(); });
+micBtn.addEventListener('click', toggleMic);
+
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.classList.contains('active')) return;
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    populateTunings();
+    savePrefs();
+  });
+});
+
+/* ================= Inicialización con preferencias guardadas ================= */
+(function initFromPrefs(){
+  const prefs = loadPrefs();
+
+  if(!prefs){
+    currentLang = (navigator.language||'es').slice(0,2);
+    if(!I18N[currentLang]) currentLang = 'es';
+    document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+    applyStaticTexts();
+    populateTunings();
+    return;
+  }
+
+  if(prefs.lang && I18N[prefs.lang]){
+    currentLang = prefs.lang;
+    document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+  }
+  if(prefs.a4 && TUNINGS){ A4REF = prefs.a4; a4Calib.value = String(prefs.a4); rescaleFrequencies(TUNINGS); }
+  if(prefs.mode){
+    currentMode = prefs.mode;
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===prefs.mode));
+  }
+  if(prefs.instrument && TUNINGS[prefs.instrument]){ instrumentSel.value = prefs.instrument; }
+  if(prefs.micGain!==undefined){ micGainSlider.value = prefs.micGain; }
+  if(prefs.noiseGate!==undefined){ noiseGateSlider.value = prefs.noiseGate; }
+  if(prefs.echoCancellation!==undefined){ echoCancelChk.checked = prefs.echoCancellation; }
+  if(prefs.noiseSuppression!==undefined){ noiseSuppressChk.checked = prefs.noiseSuppression; }
+  if(prefs.autoGainControl!==undefined){ autoGainChk.checked = prefs.autoGainControl; }
+  if(prefs.micDeviceId){ micDeviceSel.dataset.pending = prefs.micDeviceId; }
+
+  applyStaticTexts();
+  populateTunings();
+
+  if(prefs.tuning){
+    const exists = Array.from(tuningSel.options).some(o=>o.value===prefs.tuning);
+    if(exists){ tuningSel.value = prefs.tuning; loadTuning(); }
+  }
+  if(prefs.chromatic){
+    chromaticMode = true;
+    chromaticToggle.classList.add('active');
+    chromaticToggle.textContent = t('chromaOn');
+    targetName.textContent = t('targetChromatic');
+  }
+})();
+</script>
+</body>
+</html>
